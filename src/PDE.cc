@@ -2,6 +2,7 @@
 
 #include "../include/PDE.hpp"
 #include <vector>
+#include<omp.h>
 
 
 
@@ -71,30 +72,31 @@ void PDE::RedBlackGaussSeidal(void )
 real hxSquare = hx * hx, hySquare= hy * hy;
 ////------------------------------------------------RED UPDATE-----------------------------------------------------------------
 
-    for (uint row= 1; row< ny-1; ++row)
+
+#pragma omp parallel
+{
+    for (uint row= 1; row < ny-1; ++row)
     {
+        uint k = 0, columnEnd = nx-1;
+        const double constant = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi);
         if(row & 1)
         {
-            for (uint column =1; column < nx-1; column+=2)
-            {
-               u[row * nx + column] = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi) * ((u[row* nx +(column-1)]/ hySquare) +
-                                                                                        (u[row* nx +(column+1)]/ hySquare) +
-                                                                                        (u[(row-1) * nx +column]/ hxSquare) +
-                                                                                        (u[(row+1) * nx +column]/ hxSquare) +
-                                                                                        force[row* nx +column]);
-            }
+            k = 0;
         }
-    else
+        else
         {
-            for (uint column =2; column < nx-1; column+=2)
+            k =1;
+        }
+        {
+            #pragma omp for schedule(static)
+            for (uint column =1+k; column < columnEnd; column+=2)
             {
-               u[row* nx + column] = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi) * ((u[row* nx +(column-1)]/ hySquare) +
-                                                                                        (u[row* nx +(column+1)]/ hySquare) +
-                                                                                        (u[(row-1) * nx +column]/ hxSquare) +
-                                                                                        (u[(row+1) * nx +column]/ hxSquare) +
-                                                                                        force[row* nx +column]);
+               u[row * nx + column] =  constant * (((u[row* nx +(column-1)]+
+                                                    u[row* nx +(column+1)])/ hySquare) +
+                                                    ((u[(row-1) * nx +column] +
+                                                    u[(row+1) * nx +column])/ hxSquare) +
+                                                    force[row* nx +column]);
             }
-
         }
     }
 
@@ -104,30 +106,29 @@ real hxSquare = hx * hx, hySquare= hy * hy;
 
     for (uint row= 1; row< ny-1; ++row)
     {
+        uint k = 0, columnEnd = nx-1;
+        const double constant = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi);
         if(row & 1)
         {
-            for (uint column =2; column < nx-1; column+=2)
-            {
-               u[row* nx + column] = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi) * ((u[row* nx +(column-1)]/ hySquare) +
-                                                                                        (u[row* nx +(column+1)]/ hySquare) +
-                                                                                        (u[(row-1) * nx +column]/ hxSquare) +
-                                                                                        (u[(row+1) * nx +column]/ hxSquare) +
-                                                                                        force[row* nx +column]);
-            }
+            k = 1;
         }
-    else
+        else
         {
-            for (uint column =1; column < nx-1; column+=2)
-            {
-               u[row* nx + column] = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi) * ((u[row* nx +(column-1)]/ hySquare) +
-                                                                                        (u[row* nx +(column+1)]/ hySquare) +
-                                                                                        (u[(row-1) * nx +column]/ hxSquare) +
-                                                                                        (u[(row+1) * nx +column]/ hxSquare) +
-                                                                                        force[row* nx +column]);
-            }
-
+            k = 0;
         }
+        {
+            #pragma omp for schedule(static)
+            for (uint column =1 + k; column < columnEnd; column+=2)
+            {
+               u[row* nx + column] =  constant * (((u[row* nx +(column-1)]+
+                                                 u[row* nx +(column+1)])/ hySquare) +
+                                                 ((u[(row-1) * nx +column] +
+                                                 u[(row+1) * nx +column])/ hxSquare) +
+                                                 force[row* nx +column]);
+            }
+        }    
     }
+} //End OMP Parallel
 }
 
 void PDE::Residual(void)

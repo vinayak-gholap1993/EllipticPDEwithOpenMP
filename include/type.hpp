@@ -10,6 +10,7 @@
 
 #include "PDE.hpp"
 
+
 typedef double real;
 typedef unsigned int uint;
 #define twoPi 2*3.1415926535897

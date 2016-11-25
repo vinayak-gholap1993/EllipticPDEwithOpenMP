@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8.9)
 # Defining the project name
 project (ex02)
 
-set(CMAKE_CXX_FLAGS "-Wall -Winline -Wshadow -pedantic")
+set(CMAKE_CXX_FLAGS "-Wall -Winline -Wshadow -pedantic -fopenmp -march=native -ffast-math -mavx")
 
 add_definitions(-std=c++11)
 
