@@ -15,7 +15,7 @@ PDE::PDE( const uint& numx , const uint& numy , const double& hinX ,const double
    
    if(numx < 300 || numy < 300)
    {
-     totalGrid = (numx + 1) * (numy+1); 
+     totalGrid = (numx + 65) * (numy+1); 
    
    this->nx = (numx  + 1 );	//# of grids in x-direction
    this->ny = (numy + 1);	//# of grids in y-direction
@@ -23,7 +23,7 @@ PDE::PDE( const uint& numx , const uint& numy , const double& hinX ,const double
   
    else
    {
-    totalGrid = ((numx>>2) + 17) * (numy+1); 
+    totalGrid = ((numx>>2) + 65) * (numy+1); 
    
    this->nx = ((numx >> 2) + 1);	//# of grids in x-direction (Domain partitioned in X axis in 4 parts)
    this->ny = (numy + 1);
@@ -87,8 +87,8 @@ for(uint iter = 0;iter < iteration;++iter)
     {
    for (column =1 + ((row+skip) & 1) ; column < columnEnd; column+=2)
    {
-     u[ row * nx + column] =  constant * (((u[row * nx +(column-1)] +  u[ row * nx +(column+1)]) * hxSquare) + ((u[(row - 1) * nx +column] + u[(row + 1) * nx +column])* hySquare) + force[row * nx +column]);
-     } //column
+     u[ row * nx + column] =  constant * (((u[row * nx +(column-1)] +  u[ row * nx +(column+1)]) * hxSquare) + ((u[(row - 1) * nx +column] + u[(row + 1) * nx +column])* hySquare) + force[row * nx +column]);  
+  } //column
     } //row
    } //skip
   
@@ -130,11 +130,6 @@ bool PDE::writeFile(const std::string& fileName,const real* vec)
   real signBit = 1.0;
   if(file.is_open())
   {   
-    
-  // for(uint loop = 1;loop<=2 ;++loop)
-  
-  
-  //just look it once again
      
   uint newNX = nx-1 , newNY = ny-1;
  // std::cerr << BOLD(FRED("nx "))<<nx-1 <<BOLD(FRED("\t ny "))<<newNY<<std::endl;
@@ -147,29 +142,30 @@ bool PDE::writeFile(const std::string& fileName,const real* vec)
 	  {
 	    file << col*hx <<" "<<row*hy <<" "<< vec[row*nx+col] <<"\n";
 	 }
+	 file<<"\n";
   }
   
   else
   {
     
-	for(uint row = 0; row < newNY ; ++row)
+	for(uint row = 0; row <= newNY ; ++row)
 	{
 	  for(uint loop = 0;loop<=3 ; ++loop)
 	    {
 	      if (loop%2 == 1)	{signBit = -1.0;}	//odd
 	      else 	{signBit = 1.0;}
 	
-	      real temps = loop * newNX ;
+	      real temps = loop * newNX  ,colS = temps ;
 	      //std::cout<<temps<<std::endl;
 	  
-	    for(uint col = 0 , colS = temps+1; col < newNX ; ++col,++colS)
+	    for(uint col = 0 ; col < newNX ; ++col,colS++)
 	    {
-	            if(row == 0 && col== 0)	{std::cout<<"I am in \n";file << 0  <<" "<< 0 <<" "<< 0 <<"\n";}		//look
-		    file << colS*hx <<" "<<row*hy <<" "<< ((signBit) * vec[row*nx+col]) <<"\n";
+	      file << colS*hx <<" "<<row*hy <<" "<< ((signBit) * vec[row*nx+col]) <<"\n";
+	      if(loop == 3 && col== newNX-1)		{ file << 2.0 <<" "<<row*hy <<" "<<  0 <<"\n";	}	
 	    }
-	     
+	     temps = 0.0;
 	    } //loop
-	   file<<"\n \n";
+	   file<<"\n ";
 	}
   }
 
@@ -184,6 +180,7 @@ bool PDE::writeFile(const std::string& fileName,const real* vec)
     std::cerr << BOLD(FRED("\n Unable to open file  ")) <<std::endl;
     return false;
   }
-  */
+  ---*/
   file.close(); 
 }
+
