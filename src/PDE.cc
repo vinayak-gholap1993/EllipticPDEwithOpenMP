@@ -1,178 +1,189 @@
 
 
 #include "../include/PDE.hpp"
-#include <vector>
 #include<omp.h>
 
+#include <fstream>
 
 
-PDE::PDE( const uint& numx , const uint& numy )
+PDE::PDE( const uint& numx , const uint& numy , const double& hinX ,const double& hinY)
 { 
-  hx = 2.0 / numx;
-  hy = 1.0 / numy;
+   this->hx = hinX;
+   this->hy = hinY;
   
-  uint totalGridPoint = (numx+1) * (numy+1);
-  nx = numx+1; 
-  ny = numy+1;
-  
-    u.resize(totalGridPoint,0.0);
-    residual.resize(totalGridPoint,0.0);
-    force.resize(totalGridPoint,0.0);
-    
-}
-
-// hor(col) = j = ny = hy
-// ver(row) = i = nx = hx
-void PDE::applyBoundary(void)
-{
- //------------------------------- u init ---------------------
-  real temp = sinh(twoPi);
-  for(uint row = ny-1 , col = 0 ; col < nx ; col++ )
-  {
-    u[row * nx + col] = sin(twoPi * hx*col) * temp;
+   uint totalGrid; 
+   
+   if(numx < 300 || numy < 300)
+   {
+     totalGrid = (numx + 1) * (numy+1); 
+   
+   this->nx = (numx  + 1 );	//# of grids in x-direction
+   this->ny = (numy + 1);	//# of grids in y-direction
   }
-//-------------------------------- f init ---------------------
-  for(uint row = 0; row < ny ; ++row)
-    for(uint col = 0; col < nx ; ++col)
-    {  
-      force[ row * nx + col ] = twoPi * twoPi * sin(twoPi * hx * col) * sinh(twoPi * hy * row); 
-    }
-}
-
-void PDE::print(const std::vector<real> &obj)
-{
-  /*
-  for(auto iter = obj.begin() ; iter < obj.end() ; ++iter)
-    std::cout << *iter<< "\t";*/
   
-  for(int row = ny-1 ; row >=0 ; row--)
-  {
-    for(uint col = 0 ; col < nx ; col++)
-    {
-      std::cout<<obj[ row * nx + col ]<<"\t";
+   else
+   {
+    totalGrid = ((numx>>2) + 17) * (numy+1); 
+   
+   this->nx = ((numx >> 2) + 1);	//# of grids in x-direction (Domain partitioned in X axis in 4 parts)
+   this->ny = (numy + 1);
     }
-  std::cout<<"\n";
-  }
-}
-
-void PDE::trigTable(void)
-{
-  real table[nx*ny]; 
-  for(uint row = 0; row < ny ; ++row)
-    for(uint col = 0; col < nx ; ++col)
-    {
-	;
-    }
-}
-
-
-void PDE::RedBlackGaussSeidal(void )
-{
-    //uint numberofgridpoints = nx * ny;
-real hxSquare = hx * hx, hySquare= hy * hy;
-////------------------------------------------------RED UPDATE-----------------------------------------------------------------
-
 
 #pragma omp parallel
 {
-    for (uint row= 1; row < ny-1; ++row)
-    {
-        uint k = 0, columnEnd = nx-1;
-        const double constant = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi);
-        if(row & 1)
-        {
-            k = 0;
-        }
-        else
-        {
-            k =1;
-        }
-        {
-            #pragma omp for schedule(static)
-            for (uint column =1+k; column < columnEnd; column+=2)
-            {
-               u[row * nx + column] =  constant * (((u[row* nx +(column-1)]+
-                                                    u[row* nx +(column+1)])/ hySquare) +
-                                                    ((u[(row-1) * nx +column] +
-                                                    u[(row+1) * nx +column])/ hxSquare) +
-                                                    force[row* nx +column]);
-            }
-        }
-    }
-
-
-
-////------------------------------------------------BLACK UPDATE---------------------------------------------------------------
-
-    for (uint row= 1; row< ny-1; ++row)
-    {
-        uint k = 0, columnEnd = nx-1;
-        const double constant = 1.0/ ((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi);
-        if(row & 1)
-        {
-            k = 1;
-        }
-        else
-        {
-            k = 0;
-        }
-        {
-            #pragma omp for schedule(static)
-            for (uint column =1 + k; column < columnEnd; column+=2)
-            {
-               u[row* nx + column] =  constant * (((u[row* nx +(column-1)]+
-                                                 u[row* nx +(column+1)])/ hySquare) +
-                                                 ((u[(row-1) * nx +column] +
-                                                 u[(row+1) * nx +column])/ hxSquare) +
-                                                 force[row* nx +column]);
-            }
-        }    
-    }
-} //End OMP Parallel
+   this->u = new double __attribute__((aligned(64))) [totalGrid];
+   this->residual = new double __attribute__((aligned(64))) [totalGrid];
+   this->force = new double __attribute__((aligned(64))) [totalGrid];
+   
+#pragma omp for schedule(static)
+   for(uint row = 0;row < totalGrid; ++row)
+   {
+     this->u[row] = 0.0;
+     this->force[row] = 0.0;   
+   } //for row
+   
+  
+}
+   std::cout<<BOLD(FBLU(" constructor 2 done "))<<std::endl;
 }
 
-void PDE::Residual(void)
+void PDE::applyBoundary(void)
+{
+ //------------------------------- u init ----------------------------------------------------------------------------
+  real temp = std::sinh(twoPi);
+  for(uint row = this->ny-1 , col = 0 ; col < this->nx ; col++ )
+  {
+    this->u[row * this->nx + col] = std::sin(twoPi * this->hx * col) * temp;
+  }
+  
+//-------------------------------- f init -----------------------------------------------------------------------------
+  for(uint row = 0; row < this->ny ; ++row)
+    for(uint col = 0; col < this->nx ; ++col)
+    {  
+      this->force[ row * this->nx + col ] = twoPi * twoPi * sin(twoPi * this->hx * col) * sinh(twoPi * this->hy * row); 
+    }
+    std::cout<<BOLD(FBLU(" applied boundary condition done "))<<std::endl;
+}
+
+
+//---------------------------------- RBGS ---------------------------------------
+void PDE::RedBlackGaussSeidal(const uint& iteration)
+{
+    //uint numberofgridpoints = nx * ny;
+real hxSquare = 1.0 /(hx * hx), hySquare= 1.0 /(hy * hy);		/// Inverse of hxSquare and hySquare
+const real constant = 1.0/ ((2.0 * hxSquare) +(2.0 * hySquare)+ 4.0 * pi * pi);
+uint rowEnd = ny-1 , columnEnd = (nx-1) ,column;
+
+////------------------------------------------------RED UPDATE------------------------------------------------------ 
+
+#pragma omp parallel
+{
+for(uint iter = 0;iter < iteration;++iter)
+{
+  for(uint skip = 0;skip < 2; ++skip)
+  {  
+ #pragma omp for schedule(static) private(column)
+  for (uint row= 1; row < rowEnd; ++row)
+    {
+   for (column =1 + ((row+skip) & 1) ; column < columnEnd; column+=2)
+   {
+     u[ row * nx + column] =  constant * (((u[row * nx +(column-1)] +  u[ row * nx +(column+1)]) * hxSquare) + ((u[(row - 1) * nx +column] + u[(row + 1) * nx +column])* hySquare) + force[row * nx +column]);
+     } //column
+    } //row
+   } //skip
+  
+ 
+} //iter
+}
+//std::cout<<BOLD(FBLU(" RBGS done "))<<std::endl;
+}
+
+
+//------------------------------- residual -------------------------------
+real PDE::ResidualNorm(void)
 {
   real hxSquare = hx * hx, hySquare= hy * hy;
-  
-    for(uint row = 1; row < ny -1; ++row)
+  real hxInv = 1.0 / hxSquare , hyInv = 1.0 / hySquare;
+  const real constTerm = ((2.0 *hxInv ) +(2.0 * hyInv)+ 4 * pi * pi);
+  real temp = 0.0, norm = 0.0, tgInv = 1.0 / ((nx-1)*(ny-1));
+
+    for(uint row = 1; row < ny-1; ++row)
     {
         for(uint column = 1; column < nx-1 ; ++column)
         {
-            residual[row * nx + column] = force[row * nx + column] + ((u[row* nx +(column-1)]/ hySquare) +
-                                                                       (u[row* nx +(column+1)]/ hySquare) +
-                                                                       (u[(row-1) * nx +column]/ hxSquare) +
-                                                                       (u[(row+1) * nx +column]/ hxSquare) -
-                                                                       (((2.0 / hxSquare) +(2.0 /hySquare)+ 4 * pi * pi) * u[row * nx + column]));
+            temp = force[row * nx + column] + (u[row* nx +(column-1)]  + u[row* nx +(column+1)]) * hxInv +
+                                                                     (u[(row-1) * nx +column] + u[(row+1) * nx +column]) * hyInv -
+                                                                     constTerm * u[row * nx + column];
+            norm += temp * temp;
         }
     }
+    const real normValue = sqrt(norm * tgInv);
+    std::cout<<"normValue "<<normValue<<std::endl;
+    return normValue;
 }
 
-bool PDE::writeFile(const std::string& fileName,const std::vector<real>& vec)
+//---------------------------------- File write ----------------------------------
+bool PDE::writeFile(const std::string& fileName,const real* vec)
 {
   std::ofstream file(fileName);		//object of ofstream
-
+  //file.open(fileName,std::fstream::in | std::fstream::out | std::fstream::app);
+  real signBit = 1.0;
   if(file.is_open())
   {   
-   // file << nx << " " << ny <<"\n";
-    /*
-    for(auto iter = vec.begin();  iter<vec.end();++iter)
-      file << *iter <<"\n";
-    */
     
-     for(uint row = 0; row < ny ; ++row)
-      for(uint col = 0; col < nx ; ++col)
-      {
-	file << col*hx <<"\t"<<row*hy <<"\t"<<vec[row*nx+col] <<"\n";
-      }
-      std::cout << BOLD(FGRN("\n file write done  ")) <<std::endl;
+  // for(uint loop = 1;loop<=2 ;++loop)
+  
+  
+  //just look it once again
+     
+  uint newNX = nx-1 , newNY = ny-1;
+ // std::cerr << BOLD(FRED("nx "))<<nx-1 <<BOLD(FRED("\t ny "))<<newNY<<std::endl;
+  file << "#  x  y  u(x,y) \n";
+  
+  if(nx < 100 || ny < 100)
+  {
+     for(uint row = 0; row <  ny-1 ; ++row)
+        for(uint col = 0; col < nx-1 ; ++col)
+	  {
+	    file << col*hx <<" "<<row*hy <<" "<< vec[row*nx+col] <<"\n";
+	 }
+  }
+  
+  else
+  {
+    
+	for(uint row = 0; row < newNY ; ++row)
+	{
+	  for(uint loop = 0;loop<=3 ; ++loop)
+	    {
+	      if (loop%2 == 1)	{signBit = -1.0;}	//odd
+	      else 	{signBit = 1.0;}
+	
+	      real temps = loop * newNX ;
+	      //std::cout<<temps<<std::endl;
+	  
+	    for(uint col = 0 , colS = temps+1; col < newNX ; ++col,++colS)
+	    {
+	            if(row == 0 && col== 0)	{std::cout<<"I am in \n";file << 0  <<" "<< 0 <<" "<< 0 <<"\n";}		//look
+		    file << colS*hx <<" "<<row*hy <<" "<< ((signBit) * vec[row*nx+col]) <<"\n";
+	    }
+	     
+	    } //loop
+	   file<<"\n \n";
+	}
+  }
+
+        
+   }//if
+     
+      std::cout << BOLD(FBLU(" file write done  ")) <<std::endl;
     return true;
-  }//if
+ /*
   else
   {
     std::cerr << BOLD(FRED("\n Unable to open file  ")) <<std::endl;
     return false;
   }
-  
+  */
   file.close(); 
 }

@@ -6,16 +6,17 @@
 
 #include <cmath>
 
+#include <math.h>
+
 #include <fstream>
 
-#include "PDE.hpp"
+#include "../include/PDE.hpp"
 
 
 typedef double real;
 typedef unsigned int uint;
 #define twoPi 2*3.1415926535897
 #define pi 3.1415926535897
-
 
 #ifndef _COLORS_
 #define _COLORS_
