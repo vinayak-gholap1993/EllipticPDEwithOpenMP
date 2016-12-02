@@ -50,16 +50,17 @@ int main(int argc, char** argv)
     p.applyBoundary();
 
     time.reset();
-    //for(uint i= 0 ;i < 100;++i)
+    //for(uint i= 0 ;i < 10;++i)
     {      
       p.RedBlackGaussSeidal(std::atoi(argv[3]));
     }
       real runtime = time.elapsed();
+     
       std::cout<<"runtime "<<runtime<<std::endl;
    
       std::cout<<"L2 Norm "<< p.ResidualNorm()<<std::endl;
     
-      p.writeFile("u.out",p.u);
+      p.writeFile("solution.txt",p.u);
   }
   return 0;
 }
