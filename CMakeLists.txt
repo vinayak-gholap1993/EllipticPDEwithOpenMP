@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8.9)
 # Defining the project name
 project (EllipticPDEwithOpenMP-master)
 										#check
-set(CMAKE_CXX_FLAGS "-Wall -Winline -Wshadow -pedantic -ffast-math -march=native -mavx -funit-at-a-time -fstrength-reduce -fexpensive-optimizations -fschedule-insns2 -funroll-all-loops -O3 -fopenmp")
+set(CMAKE_CXX_FLAGS "-Wall -Winline -Wshadow -Wextra -DNDEBUG -pedantic -ffast-math -march=native -mavx -funit-at-a-time -fstrength-reduce -fexpensive-optimizations -fschedule-insns2 -funroll-all-loops -O3 -fopenmp")
 
 add_definitions(-std=c++11)
 

@@ -12,7 +12,7 @@ PDE::PDE( const uint& numx , const uint& numy , const double& hinX ,const double
    this->hy = hinY;
   
    uint totalGrid; 
-   
+
    if(numx < 300 || numy < 300)
    {
      totalGrid = (numx + 65) * (numy+1); 
@@ -44,7 +44,7 @@ PDE::PDE( const uint& numx , const uint& numy , const double& hinX ,const double
    
   
 }
-   std::cout<<BOLD(FBLU(" constructor 2 done "))<<std::endl;
+   //std::cout<<BOLD(FBLU(" constructor 2 done "))<<std::endl;
 }
 
 void PDE::applyBoundary(void)
@@ -62,7 +62,7 @@ void PDE::applyBoundary(void)
     {  
       this->force[ row * this->nx + col ] = twoPi * twoPi * sin(twoPi * this->hx * col) * sinh(twoPi * this->hy * row); 
     }
-    std::cout<<BOLD(FBLU(" applied boundary condition done "))<<std::endl;
+    //std::cout<<BOLD(FBLU(" applied boundary condition done "))<<std::endl;
 }
 
 
@@ -118,7 +118,7 @@ real PDE::ResidualNorm(void)
         }
     }
     const real normValue = sqrt(norm * tgInv);
-    std::cout<<"normValue "<<normValue<<std::endl;
+    
     return normValue;
 }
 
@@ -172,7 +172,7 @@ bool PDE::writeFile(const std::string& fileName,const real* vec)
         
    }//if
      
-      std::cout << BOLD(FBLU(" file write done  ")) <<std::endl;
+      //std::cout << BOLD(FBLU(" file write done  ")) <<std::endl;
     return true;
  /*
   else
